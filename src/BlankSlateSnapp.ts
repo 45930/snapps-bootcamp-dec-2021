@@ -17,8 +17,9 @@ import {
   UInt64,
   Party,
 } from 'snarkyjs';
+import { stringToBits, numberToBits } from './utils/bits';
 
-await isReady;
+// await isReady;
 
 type RoundScoreRecord = {
   scores: Record<
@@ -35,23 +36,38 @@ class BlankSlateSnapp extends SmartContract {
     - serializedGameState | Field that can be deserialzed into a game state object, representing the current state of the game
   */
   @state(Field) serializedGameState: State<Field>;
+  @state(Field) player1Guess: State<Field>;
+  @state(Field) player2Guess: State<Field>;
+  @state(Field) player3Guess: State<Field>;
+  @state(Field) player4Guess: State<Field>;
+  @state(Field) player5Guess: State<Field>;
+  @state(Field) player6Guess: State<Field>;
 
   gameState: BlankSlateGameState;
   playerCount: number;
 
-  constructor(address: PublicKey) {
+  constructor(address: PublicKey, playerCount: number) {
     super(address);
 
-    this.gameState = this.initialGameState();
-    this.serializedGameState = State.init(this.gameState.serialize());
     this.playerCount = 4;
+    this.gameState = this.initialGameState(playerCount);
+
+    const initialGameState = this.gameState.serialize();
+    this.serializedGameState = State.init(initialGameState[0]);
+    this.player1Guess = State.init(initialGameState[1]);
+    this.player2Guess = State.init(initialGameState[2]);
+    this.player3Guess = State.init(initialGameState[3]);
+    this.player4Guess = State.init(initialGameState[4]);
+    this.player5Guess = State.init(initialGameState[5]);
+    this.player6Guess = State.init(initialGameState[6]);
   }
 
   /*
    @dev initialize new game
+   @param playerCount number of players in the game
   */
-  initialGameState(): BlankSlateGameState {
-    return new BlankSlateGameState();
+  initialGameState(playerCount: number): BlankSlateGameState {
+    return new BlankSlateGameState(playerCount);
   }
 
   /*
@@ -60,27 +76,78 @@ class BlankSlateSnapp extends SmartContract {
    @param guess the player's guess for this round
   */
   submitGuess(playerIndex: number, guess: string) {
-    // todo: add checks!
     this.gameState.state.guesses[playerIndex] = guess;
-    this.updateGame();
-    if (this.gameState.state.guesses.every((guess) => guess !== null)) {
-      this.evaluateRound();
-    }
+    this.updatePlayer(4, guess);
   }
 
   /*
    @dev review the guesses, and apply score updates to the game state
+   @asserts player guess on chain == player guess being evaluated
+   @asserts player scores on chain == player scores in state
+   @updates player guesses reset to blank after evaluation
+   @updates game scores get incremented by round scores
   */
-  evaluateRound() {
-    // todo: add checks!
+  async evaluateRound() {
     const roundScores: RoundScoreRecord = {
       scores: {},
     };
+
+    const player1GuessAssertion = this.gameState.state.guesses[0];
+    const player1Guess = await this.player1Guess.get();
+    player1Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player1GuessAssertion)),
+        new Field(1337),
+      ])
+    );
+
+    const player2GuessAssertion = this.gameState.state.guesses[0];
+    const player2Guess = await this.player1Guess.get();
+    player2Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player2GuessAssertion)),
+        new Field(1337),
+      ])
+    );
+
+    const player3GuessAssertion = this.gameState.state.guesses[0];
+    const player3Guess = await this.player3Guess.get();
+    player3Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player3GuessAssertion)),
+        new Field(1337),
+      ])
+    );
+
+    const player4GuessAssertion = this.gameState.state.guesses[0];
+    const player4Guess = await this.player4Guess.get();
+    player4Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player4GuessAssertion)),
+        new Field(1337),
+      ])
+    );
+
+    const player5GuessAssertion = this.gameState.state.guesses[0];
+    const player5Guess = await this.player5Guess.get();
+    player5Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player5GuessAssertion)),
+        new Field(1337),
+      ])
+    );
+
+    const player6GuessAssertion = this.gameState.state.guesses[0];
+    const player6Guess = await this.player6Guess.get();
+    player6Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player6GuessAssertion)),
+        new Field(1337),
+      ])
+    );
+
     for (let i = 0; i < this.playerCount; i++) {
       const playerGuess = this.gameState.state.guesses[i];
-      if (playerGuess === null) {
-        throw Error;
-      }
       if (playerGuess in roundScores.scores) {
         roundScores.scores[playerGuess].value += 1;
         roundScores.scores[playerGuess].players.push(i);
@@ -91,6 +158,16 @@ class BlankSlateSnapp extends SmartContract {
         };
       }
     }
+
+    // Make sure score state is valid
+    let gameBits: Array<boolean> = [];
+    gameBits = gameBits.concat(numberToBits(this.gameState.state.playerCount));
+    for (let i = 0; i < this.gameState.state.playerCount; i++) {
+      const score = this.gameState.state.points[i];
+      gameBits = gameBits.concat(numberToBits(score));
+    }
+    this.serializedGameState.assertEquals(Field.ofBits(gameBits));
+
     for (const score in roundScores.scores) {
       if (roundScores.scores[score].value > 0) {
         roundScores.scores[score].players.forEach(
@@ -99,6 +176,25 @@ class BlankSlateSnapp extends SmartContract {
         );
       }
     }
+
+    this.gameState.state.guesses = new Array(6).fill('');
+    const serialized = this.gameState.serialize();
+
+    // todo: add something like awaitAll here
+    await this.serializedGameState.set(serialized[0]);
+    await this.player1Guess.set(serialized[1]);
+    await this.player2Guess.set(serialized[2]);
+    await this.player3Guess.set(serialized[3]);
+    await this.player4Guess.set(serialized[4]);
+    await this.player5Guess.set(serialized[5]);
+    await this.player6Guess.set(serialized[6]);
+  }
+
+  updatePlayer(playerIndex: number, guess: string) {
+    // Cannot update guess again this round
+    this.player1Guess.assertEquals(new Field(0));
+
+    this.player1Guess.set(this.gameState.serialize()[playerIndex + 1]);
   }
 
   /*
@@ -106,8 +202,34 @@ class BlankSlateSnapp extends SmartContract {
   */
   updateGame() {
     // todo: add checks!
-    this.serializedGameState.set(this.gameState.serialize());
+    // this.serializedGameState.set(this.gameState.serialize());
   }
 }
 
 export default BlankSlateSnapp;
+
+async function test() {
+  await isReady;
+  const mina = Mina.LocalBlockchain();
+  Mina.setActiveInstance(mina);
+  const account1 = mina.testAccounts[0].privateKey;
+  const account2 = mina.testAccounts[1].privateKey;
+
+  let snapp: BlankSlateSnapp;
+  let isDeploying = false;
+  let snappAddress: PublicKey;
+
+  isDeploying = true;
+  const snappPrivkey = PrivateKey.random();
+  snappAddress = snappPrivkey.toPublicKey();
+
+  let tx = Mina.transaction(account1, async () => {
+    console.log('Deploying...');
+    const initialBalance = UInt64.fromNumber(1000000);
+    const p = await Party.createSigned(account2);
+    p.balance.subInPlace(initialBalance);
+    snapp = new BlankSlateSnapp(snappAddress, 4);
+  });
+}
+
+test();
