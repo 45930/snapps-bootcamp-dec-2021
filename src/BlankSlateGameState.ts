@@ -24,7 +24,7 @@ export class BlankSlateGameState {
       points: new Array(this.MAX_PLAYERS).fill(0),
       guesses: new Array(this.MAX_PLAYERS).fill(''),
       playerCount: playerCount,
-      winningScore: 10,
+      winningScore: 5,
     };
   }
 
@@ -44,6 +44,7 @@ export class BlankSlateGameState {
       const score = this.state.points[i];
       gameBits = gameBits.concat(numberToBits(score));
     }
+    gameBits.concat(numberToBits(this.state.winningScore));
 
     fields.push(Field.ofBits(gameBits));
 

@@ -1,26 +1,5 @@
-import { BlankSlateGameState } from './BlankSlateGameState';
 import { Mina, isReady, PublicKey, PrivateKey, UInt64, Party } from 'snarkyjs';
-import BlankSlateSnapp from './BlankSlateSnapp';
-
-const state = new BlankSlateGameState(4);
-state.state.guesses = [
-  'spring',
-  'spring',
-  'bees',
-  'ultra long guess aaaa',
-  '',
-  '',
-];
-let ser = state.serialize();
-
-state.state.points = [1, 4, 9, 5, 0, 0];
-ser = state.serialize();
-// console.log(
-//   ser[0]
-//     .toBits()
-//     .map((x) => Number(x.toBoolean()))
-//     .join('')
-// );
+import BlankSlateSnapp from '../BlankSlateSnapp';
 
 await isReady;
 const mina = Mina.LocalBlockchain();
@@ -29,14 +8,13 @@ const account1 = mina.testAccounts[0].privateKey;
 const account2 = mina.testAccounts[1].privateKey;
 
 let snapp: BlankSlateSnapp;
-let isDeploying = false;
 let snappAddress: PublicKey;
 
-isDeploying = true;
 const snappPrivkey = PrivateKey.random();
 snappAddress = snappPrivkey.toPublicKey();
 
-let tx = await Mina.transaction(account1, async () => {
+console.log('$$ Beggining new game with 4 players...');
+await Mina.transaction(account1, async () => {
   const initialBalance = UInt64.fromNumber(1000000);
   const p = await Party.createSigned(account2);
   p.balance.subInPlace(initialBalance);
@@ -45,23 +23,26 @@ let tx = await Mina.transaction(account1, async () => {
   .send()
   .wait();
 
+console.log('$$ Round 1');
+console.log("$$ Prompt is 'If you can't beat them, _____ them!");
+console.log('$$ Players submitting guesses');
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(0, 'tree');
+  await snapp.submitGuess(0, 'join');
 })
   .send()
   .wait();
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(1, 'tree');
+  await snapp.submitGuess(1, 'join');
 })
   .send()
   .wait();
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(2, 'log');
+  await snapp.submitGuess(2, 'destroy');
 })
   .send()
   .wait();
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(3, 'stump');
+  await snapp.submitGuess(3, 'fight');
 })
   .send()
   .wait();
@@ -71,6 +52,9 @@ await Mina.transaction(account2, async () => {
   .send()
   .wait();
 
+console.log('$$ Round 2');
+console.log("$$ Prompt is 'My favorite animal is a _____");
+console.log('$$ Players submitting guesses');
 await Mina.transaction(account2, async () => {
   await snapp.submitGuess(0, 'dog');
 })
@@ -97,23 +81,27 @@ await Mina.transaction(account2, async () => {
   .send()
   .wait();
 
+console.log('$$ Round 3');
+console.log("$$ Prompt is 'I'm just a ______ in paradise");
+console.log('$$ Players submitting guesses');
+
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(0, 'beer');
+  await snapp.submitGuess(0, 'cheeseburger');
 })
   .send()
   .wait();
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(1, 'beer');
+  await snapp.submitGuess(1, 'cheeseburger');
 })
   .send()
   .wait();
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(2, 'beer');
+  await snapp.submitGuess(2, 'cheeseburger');
 })
   .send()
   .wait();
 await Mina.transaction(account2, async () => {
-  await snapp.submitGuess(3, 'beer');
+  await snapp.submitGuess(3, 'cheeseburger');
 })
   .send()
   .wait();
