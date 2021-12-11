@@ -51,7 +51,11 @@ export class BlankSlateGameState {
     for (let i = 0; i < this.MAX_PLAYERS; i++) {
       const guess = this.state.guesses[i];
       const playerBits = stringToBits(guess);
-      fields.push(Poseidon.hash([Field.ofBits(playerBits), new Field(1337)]));
+      fields.push(
+        new Field(
+          Poseidon.hash([Field.ofBits(playerBits), new Field(`1337${i}`)])
+        )
+      );
     }
     return fields;
   }

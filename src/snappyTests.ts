@@ -40,17 +40,37 @@ let tx = await Mina.transaction(account1, async () => {
   const initialBalance = UInt64.fromNumber(1000000);
   const p = await Party.createSigned(account2);
   p.balance.subInPlace(initialBalance);
-  snapp = await new BlankSlateSnapp(snappAddress, 4);
+  snapp = await new BlankSlateSnapp(snappAddress, initialBalance, 4);
 })
   .send()
   .wait();
 
-// Office hours?
 await Mina.transaction(account2, async () => {
   await snapp.submitGuess(0, 'tree');
 })
   .send()
   .wait();
+await Mina.transaction(account2, async () => {
+  await snapp.submitGuess(1, 'tree');
+})
+  .send()
+  .wait();
+await Mina.transaction(account2, async () => {
+  await snapp.submitGuess(2, 'log');
+})
+  .send()
+  .wait();
+await Mina.transaction(account2, async () => {
+  await snapp.submitGuess(3, 'stump');
+})
+  .send()
+  .wait();
+await Mina.transaction(account2, async () => {
+  await snapp.evaluateRound();
+})
+  .send()
+  .wait();
+
 // await snapp.submitGuess(0, 'tree') // uncomment to fail - same player!
 // await snapp.submitGuess(1, 'tree')
 // await snapp.submitGuess(2, 'log')
