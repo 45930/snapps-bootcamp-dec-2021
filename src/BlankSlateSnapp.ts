@@ -53,6 +53,7 @@ class BlankSlateSnapp extends SmartContract {
     this.gameState = this.initialGameState(playerCount);
 
     const initialGameState = this.gameState.serialize();
+    console.log(initialGameState[1].toString());
     this.serializedGameState = State.init(initialGameState[0]);
     this.player1Guess = State.init(initialGameState[1]);
     this.player2Guess = State.init(initialGameState[2]);
@@ -75,9 +76,62 @@ class BlankSlateSnapp extends SmartContract {
    @param playerIndex functions as the player id in the game - the index in the scores array for the game state
    @param guess the player's guess for this round
   */
-  submitGuess(playerIndex: number, guess: string) {
+  async submitGuess(playerIndex: number, guess: string) {
+    console.log(`Submitting Guess: ${guess}`);
+    let playerGuess;
+    switch (playerIndex) {
+      case 0:
+        console.log('her0');
+        console.log(this.gameState.serialize()[playerIndex + 1].toString());
+        playerGuess = await this.player1Guess.get();
+        console.log('her0');
+        console.log(playerGuess.toString());
+        playerGuess.assertEquals(new Field(0));
+        await this.player1Guess.set(
+          this.gameState.serialize()[playerIndex + 1]
+        );
+        break;
+      case 1:
+        console.log('her1');
+        playerGuess = await this.player2Guess.get();
+        console.log(playerGuess.toString());
+        playerGuess.assertEquals(new Field(0));
+        await this.player2Guess.set(
+          this.gameState.serialize()[playerIndex + 1]
+        );
+        break;
+      case 2:
+        playerGuess = await this.player3Guess.get();
+        playerGuess.assertEquals(new Field(0));
+        await this.player3Guess.set(
+          this.gameState.serialize()[playerIndex + 1]
+        );
+        break;
+      case 3:
+        playerGuess = await this.player4Guess.get();
+        playerGuess.assertEquals(new Field(0));
+        await this.player4Guess.set(
+          this.gameState.serialize()[playerIndex + 1]
+        );
+        break;
+      case 4:
+        playerGuess = await this.player5Guess.get();
+        playerGuess.assertEquals(new Field(0));
+        await this.player5Guess.set(
+          this.gameState.serialize()[playerIndex + 1]
+        );
+        break;
+      case 5:
+        playerGuess = await this.player6Guess.get();
+        playerGuess.assertEquals(new Field(0));
+        await this.player6Guess.set(
+          this.gameState.serialize()[playerIndex + 1]
+        );
+        break;
+      default:
+        new Bool(false).assertEquals(new Bool(true));
+    }
     this.gameState.state.guesses[playerIndex] = guess;
-    this.updatePlayer(4, guess);
   }
 
   /*
@@ -190,13 +244,6 @@ class BlankSlateSnapp extends SmartContract {
     await this.player6Guess.set(serialized[6]);
   }
 
-  updatePlayer(playerIndex: number, guess: string) {
-    // Cannot update guess again this round
-    this.player1Guess.assertEquals(new Field(0));
-
-    this.player1Guess.set(this.gameState.serialize()[playerIndex + 1]);
-  }
-
   /*
    @dev write the current game state to the blockchain
   */
@@ -207,29 +254,3 @@ class BlankSlateSnapp extends SmartContract {
 }
 
 export default BlankSlateSnapp;
-
-async function test() {
-  await isReady;
-  const mina = Mina.LocalBlockchain();
-  Mina.setActiveInstance(mina);
-  const account1 = mina.testAccounts[0].privateKey;
-  const account2 = mina.testAccounts[1].privateKey;
-
-  let snapp: BlankSlateSnapp;
-  let isDeploying = false;
-  let snappAddress: PublicKey;
-
-  isDeploying = true;
-  const snappPrivkey = PrivateKey.random();
-  snappAddress = snappPrivkey.toPublicKey();
-
-  let tx = Mina.transaction(account1, async () => {
-    console.log('Deploying...');
-    const initialBalance = UInt64.fromNumber(1000000);
-    const p = await Party.createSigned(account2);
-    p.balance.subInPlace(initialBalance);
-    snapp = new BlankSlateSnapp(snappAddress, 4);
-  });
-}
-
-test();
