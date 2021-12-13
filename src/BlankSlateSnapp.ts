@@ -82,75 +82,95 @@ class BlankSlateSnapp extends SmartContract {
   async submitGuess(playerIndex: number, guess: string) {
     this.gameState.state.guesses[playerIndex] = guess;
 
-    let playerGuess: Field;
-    switch (playerIndex) {
-      case 0:
-        playerGuess = await this.player1Guess.get();
-        Circuit.asProver(() => {
-          playerGuess.assertEquals(
-            Poseidon.hash([Field(0), new Field('13370')])
-          );
-        });
-        const serialized = this.gameState.serialize()[playerIndex + 1];
-        this.player1Guess.set(this.gameState.serialize()[playerIndex + 1]);
-        console.log(`Set Player 1 guess to ${guess}`);
-        break;
-      case 1:
-        playerGuess = await this.player2Guess.get();
-        Circuit.asProver(() => {
-          playerGuess.assertEquals(
-            Poseidon.hash([Field(0), new Field('13371')])
-          );
-        });
-        const serialized2 = this.gameState.serialize()[playerIndex + 2];
-        this.player2Guess.set(this.gameState.serialize()[playerIndex + 1]);
-        console.log(`Set Player 2 guess to ${guess}`);
-        break;
-      case 2:
-        playerGuess = await this.player3Guess.get();
-        Circuit.asProver(() => {
-          playerGuess.assertEquals(
-            Poseidon.hash([Field(0), new Field('13372')])
-          );
-        });
-        this.player3Guess.set(this.gameState.serialize()[playerIndex + 1]);
-        console.log(`Set Player 3 guess to ${guess}`);
-        break;
-      case 3:
-        playerGuess = await this.player4Guess.get();
-        Circuit.asProver(() => {
-          playerGuess.assertEquals(
-            Poseidon.hash([Field(0), new Field('13373')])
-          );
-        });
-        this.player4Guess.set(this.gameState.serialize()[playerIndex + 1]);
-        console.log(`Set Player 4 guess to ${guess}`);
-        break;
-      case 4:
-        playerGuess = await this.player5Guess.get();
-        Circuit.asProver(() => {
-          playerGuess.assertEquals(
-            Poseidon.hash([Field(0), new Field('13374')])
-          );
-        });
-        this.player5Guess.set(this.gameState.serialize()[playerIndex + 1]);
-        console.log(`Set Player 5 guess to ${guess}`);
-        break;
-      case 5:
-        playerGuess = await this.player6Guess.get();
-        Circuit.asProver(() => {
-          playerGuess.assertEquals(
-            Poseidon.hash([Field(0), new Field('13375')])
-          );
-        });
-        this.player6Guess.set(this.gameState.serialize()[playerIndex + 1]);
-        console.log(`Set Player 6 guess to ${guess}`);
-        break;
-      default:
-        console.log(`Index out of bounds ${playerIndex}`);
-        new Bool(false).assertEquals(new Bool(true));
-    }
-    this.gameState.state.guesses[playerIndex] = guess;
+    const player1GuessAssertion = this.gameState.state.guesses[0];
+    let player1Guess = await this.player1Guess.get();
+
+    const player2GuessAssertion = this.gameState.state.guesses[1];
+    let player2Guess = await this.player2Guess.get();
+
+    const player3GuessAssertion = this.gameState.state.guesses[2];
+    let player3Guess = await this.player3Guess.get();
+
+    const player4GuessAssertion = this.gameState.state.guesses[3];
+    let player4Guess = await this.player4Guess.get();
+
+    const player5GuessAssertion = this.gameState.state.guesses[4];
+    let player5Guess = await this.player5Guess.get();
+
+    const player6GuessAssertion = this.gameState.state.guesses[5];
+    let player6Guess = await this.player6Guess.get();
+
+    // Circuit.if finds the correct player index to update
+    // Second level if determines whether or not a guess has already been submitted
+    // Only one player state may be updated, but at the end of the method all player state is attested
+    player1Guess = Circuit.if(
+      playerIndex == 0,
+      Circuit.if(
+        player1Guess.equals(Poseidon.hash([Field(0), new Field('13370')])),
+        this.gameState.serialize()[playerIndex + 1],
+        player1Guess
+      ),
+      player1Guess
+    );
+
+    player2Guess = Circuit.if(
+      playerIndex == 1,
+      Circuit.if(
+        player2Guess.equals(Poseidon.hash([Field(0), new Field('13371')])),
+        this.gameState.serialize()[playerIndex + 1],
+        player2Guess
+      ),
+      player2Guess
+    );
+
+    player3Guess = Circuit.if(
+      playerIndex == 2,
+      Circuit.if(
+        player3Guess.equals(Poseidon.hash([Field(0), new Field('13372')])),
+        this.gameState.serialize()[playerIndex + 1],
+        player3Guess
+      ),
+      player3Guess
+    );
+
+    player4Guess = Circuit.if(
+      playerIndex == 3,
+      Circuit.if(
+        player4Guess.equals(Poseidon.hash([Field(0), new Field('13373')])),
+        this.gameState.serialize()[playerIndex + 1],
+        player4Guess
+      ),
+      player4Guess
+    );
+
+    player5Guess = Circuit.if(
+      playerIndex == 4,
+      Circuit.if(
+        player5Guess.equals(Poseidon.hash([Field(0), new Field('13374')])),
+        this.gameState.serialize()[playerIndex + 1],
+        player5Guess
+      ),
+      player5Guess
+    );
+
+    player6Guess = Circuit.if(
+      playerIndex == 5,
+      Circuit.if(
+        player6Guess.equals(Poseidon.hash([Field(0), new Field('13375')])),
+        this.gameState.serialize()[playerIndex + 1],
+        player6Guess
+      ),
+      player6Guess
+    );
+
+    console.log(`Player ${playerIndex + 1} guessed ${guess}`);
+
+    this.player1Guess.set(player1Guess);
+    this.player2Guess.set(player2Guess);
+    this.player3Guess.set(player3Guess);
+    this.player4Guess.set(player4Guess);
+    this.player5Guess.set(player5Guess);
+    this.player6Guess.set(player6Guess);
   }
 
   /*
@@ -168,69 +188,57 @@ class BlankSlateSnapp extends SmartContract {
     // ensure that player guesses are legit
     const player1GuessAssertion = this.gameState.state.guesses[0];
     const player1Guess = await this.player1Guess.get();
-    Circuit.asProver(() => {
-      player1Guess.assertEquals(
-        Poseidon.hash([
-          Field.ofBits(stringToBits(player1GuessAssertion)),
-          new Field('13370'),
-        ])
-      );
-    });
+    player1Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player1GuessAssertion)),
+        new Field('13370'),
+      ])
+    );
 
-    const player2GuessAssertion = this.gameState.state.guesses[0];
-    const player2Guess = await this.player1Guess.get();
-    Circuit.asProver(() => {
-      player2Guess.assertEquals(
-        Poseidon.hash([
-          Field.ofBits(stringToBits(player2GuessAssertion)),
-          new Field('13371'),
-        ])
-      );
-    });
+    const player2GuessAssertion = this.gameState.state.guesses[1];
+    const player2Guess = await this.player2Guess.get();
+    player2Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player2GuessAssertion)),
+        new Field('13371'),
+      ])
+    );
 
-    const player3GuessAssertion = this.gameState.state.guesses[0];
+    const player3GuessAssertion = this.gameState.state.guesses[2];
     const player3Guess = await this.player3Guess.get();
-    Circuit.asProver(() => {
-      player3Guess.assertEquals(
-        Poseidon.hash([
-          Field.ofBits(stringToBits(player3GuessAssertion)),
-          new Field('13372'),
-        ])
-      );
-    });
+    player3Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player3GuessAssertion)),
+        new Field('13372'),
+      ])
+    );
 
-    const player4GuessAssertion = this.gameState.state.guesses[0];
+    const player4GuessAssertion = this.gameState.state.guesses[3];
     const player4Guess = await this.player4Guess.get();
-    Circuit.asProver(() => {
-      player4Guess.assertEquals(
-        Poseidon.hash([
-          Field.ofBits(stringToBits(player4GuessAssertion)),
-          new Field('13373'),
-        ])
-      );
-    });
+    player4Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player4GuessAssertion)),
+        new Field('13373'),
+      ])
+    );
 
-    const player5GuessAssertion = this.gameState.state.guesses[0];
+    const player5GuessAssertion = this.gameState.state.guesses[4];
     const player5Guess = await this.player5Guess.get();
-    Circuit.asProver(() => {
-      player5Guess.assertEquals(
-        Poseidon.hash([
-          Field.ofBits(stringToBits(player5GuessAssertion)),
-          new Field('13374'),
-        ])
-      );
-    });
+    player5Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player5GuessAssertion)),
+        new Field('13374'),
+      ])
+    );
 
-    const player6GuessAssertion = this.gameState.state.guesses[0];
+    const player6GuessAssertion = this.gameState.state.guesses[5];
     const player6Guess = await this.player6Guess.get();
-    Circuit.asProver(() => {
-      player6Guess.assertEquals(
-        Poseidon.hash([
-          Field.ofBits(stringToBits(player6GuessAssertion)),
-          new Field('13375'),
-        ])
-      );
-    });
+    player6Guess.assertEquals(
+      Poseidon.hash([
+        Field.ofBits(stringToBits(player6GuessAssertion)),
+        new Field('13375'),
+      ])
+    );
 
     for (let i = 0; i < this.playerCount; i++) {
       const playerGuess = this.gameState.state.guesses[i];
@@ -247,16 +255,7 @@ class BlankSlateSnapp extends SmartContract {
 
     // Make sure score state is valid
     const blockChainGameState = await this.serializedGameState.get();
-    let gameBits: Array<boolean> = [];
-    gameBits = gameBits.concat(numberToBits(this.gameState.state.playerCount));
-    for (let i = 0; i < this.gameState.state.playerCount; i++) {
-      const score = this.gameState.state.points[i];
-      gameBits = gameBits.concat(numberToBits(score));
-    }
-    gameBits = gameBits.concat(numberToBits(this.gameState.state.winningScore));
-    Circuit.asProver(() => {
-      blockChainGameState.assertEquals(Field.ofBits(gameBits));
-    });
+    blockChainGameState.assertEquals(this.gameState.serialize()[0]);
 
     for (const score in roundScores.scores) {
       if (roundScores.scores[score].value > 0) {
@@ -278,6 +277,60 @@ class BlankSlateSnapp extends SmartContract {
     this.player4Guess.set(serialized[4]);
     this.player5Guess.set(serialized[5]);
     this.player6Guess.set(serialized[6]);
+  }
+
+  async submitPlayer1Guess(guess: string): Promise<Field> {
+    let playerGuess;
+    playerGuess = await this.player1Guess.get();
+    playerGuess.assertEquals(Poseidon.hash([Field(0), new Field('13370')]));
+    this.player1Guess.set(this.gameState.serialize()[1]);
+    console.log(`Set Player 1 guess to ${guess}`);
+    return playerGuess;
+  }
+
+  async submitPlayer2Guess(guess: string): Promise<Field> {
+    let playerGuess;
+    playerGuess = await this.player1Guess.get();
+    playerGuess.assertEquals(Poseidon.hash([Field(0), new Field('13371')]));
+    this.player1Guess.set(this.gameState.serialize()[2]);
+    console.log(`Set Player 2 guess to ${guess}`);
+    return playerGuess;
+  }
+
+  async submitPlayer3Guess(guess: string): Promise<Field> {
+    let playerGuess;
+    playerGuess = await this.player1Guess.get();
+    playerGuess.assertEquals(Poseidon.hash([Field(0), new Field('13372')]));
+    this.player1Guess.set(this.gameState.serialize()[3]);
+    console.log(`Set Player 3 guess to ${guess}`);
+    return playerGuess;
+  }
+
+  async submitPlayer4Guess(guess: string): Promise<Field> {
+    let playerGuess;
+    playerGuess = await this.player1Guess.get();
+    playerGuess.assertEquals(Poseidon.hash([Field(0), new Field('13373')]));
+    this.player1Guess.set(this.gameState.serialize()[4]);
+    console.log(`Set Player 4 guess to ${guess}`);
+    return playerGuess;
+  }
+
+  async submitPlayer5Guess(guess: string): Promise<Field> {
+    let playerGuess;
+    playerGuess = await this.player1Guess.get();
+    playerGuess.assertEquals(Poseidon.hash([Field(0), new Field('13374')]));
+    this.player1Guess.set(this.gameState.serialize()[5]);
+    console.log(`Set Player 5 guess to ${guess}`);
+    return playerGuess;
+  }
+
+  async submitPlayer6Guess(guess: string): Promise<Field> {
+    let playerGuess;
+    playerGuess = await this.player1Guess.get();
+    playerGuess.assertEquals(Poseidon.hash([Field(0), new Field('13375')]));
+    this.player1Guess.set(this.gameState.serialize()[6]);
+    console.log(`Set Player 6 guess to ${guess}`);
+    return playerGuess;
   }
 
   async endGame(): Promise<number> {

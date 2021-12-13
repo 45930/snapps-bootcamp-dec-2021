@@ -46,6 +46,15 @@ await Mina.transaction(account2, async () => {
 })
   .send()
   .wait();
+
+// Including this transaction breaks the circuit because it
+// updates the game state, but not the contract state because
+// a second guess is not allowed. todo: rollback game state change in this case
+// await Mina.transaction(account2, async () => {
+//   await snapp.submitGuess(0, 'bingo');
+// })
+//   .send()
+//   .wait();
 await Mina.transaction(account2, async () => {
   await snapp.evaluateRound();
 })
